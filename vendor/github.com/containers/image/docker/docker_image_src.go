@@ -91,6 +91,8 @@ func (s *dockerImageSource) GetManifest() ([]byte, string, error) {
 }
 
 func (s *dockerImageSource) fetchManifest(tagOrDigest string) ([]byte, string, error) {
+	logrus.Debugf("(*dockerImageSource).fetchManifest: starting with tagOrDigest=%s", tagOrDigest)
+	defer logrus.Debugf("(*dockerImageSource).fetchManifest: terminating")
 	url := fmt.Sprintf(manifestURL, s.ref.ref.RemoteName(), tagOrDigest)
 	headers := make(map[string][]string)
 	headers["Accept"] = s.requestedManifestMIMETypes
@@ -100,7 +102,9 @@ func (s *dockerImageSource) fetchManifest(tagOrDigest string) ([]byte, string, e
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return nil, "", client.HandleErrorResponse(res)
+		err := client.HandleErrorResponse(res)
+		logrus.Debugf("(*dockerImageSource).fetchManifest: got error: %#+v", err)
+		return nil, "", err
 	}
 	manblob, err := ioutil.ReadAll(res.Body)
 	if err != nil {
